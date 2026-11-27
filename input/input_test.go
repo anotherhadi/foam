@@ -1,9 +1,11 @@
 package input
 
 import (
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func press(m *Model, keys ...tea.KeyPressMsg) {
@@ -29,5 +31,17 @@ func TestEditing(t *testing.T) {
 	}
 	if m.Update(tea.KeyPressMsg{Code: 'x', Mod: tea.ModCtrl}) {
 		t.Fatal("ctrl+x should not be used")
+	}
+}
+
+func TestMask(t *testing.T) {
+	m := Model{Mask: '•'}
+	press(&m, tea.KeyPressMsg{Code: 'a', Text: "a"}, tea.KeyPressMsg{Code: 'b', Text: "b"})
+	got := ansi.Strip(m.View(10, false))
+	if strings.Contains(got, "a") || strings.Contains(got, "b") || !strings.Contains(got, "••") {
+		t.Fatalf("view = %q", got)
+	}
+	if m.Value() != "ab" {
+		t.Fatalf("value = %q", m.Value())
 	}
 }

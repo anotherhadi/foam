@@ -139,13 +139,17 @@ func Hatch(w, h int, msg string) string {
 
 func Rule(w int) string { return theme.Muted().Render(strings.Repeat("─", max(w, 0))) }
 
-// Selected renders a full-width selected row, its own styles stripped.
+// Selected paints a full-width selected row: the background replaces the row's,
+// its own colors are kept.
 func Selected(line string, w int, focused bool) string {
 	bg := theme.Selection()
 	if !focused {
 		bg = theme.Surface()
 	}
-	return lipgloss.NewStyle().Background(bg.Value()).Foreground(theme.Fg().Value()).Render(Pad(ansi.Strip(line), w))
+	probe := lipgloss.NewStyle().Background(bg.Value()).Foreground(theme.Fg().Value()).Render("x")
+	on, _, _ := strings.Cut(probe, "x")
+	line = strings.NewReplacer("\x1b[m", "\x1b[m"+on, "\x1b[0m", "\x1b[0m"+on).Replace(Pad(line, w))
+	return on + line + "\x1b[m"
 }
 
 // Dim fades c halfway to the background, under a modal.

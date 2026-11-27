@@ -19,6 +19,8 @@ type Model struct {
 	Question string
 	Yes, No  string // button labels
 	Danger   bool   // the yes button in the danger color
+	// OnNo, when set, runs once the overlay is closed by a no.
+	OnNo tea.Cmd
 
 	onYes tea.Cmd
 	yes   bool // the selected button
@@ -33,8 +35,14 @@ func (m *Model) answer(yes bool) tea.Cmd {
 	if yes {
 		return tea.Sequence(overlay.Close, m.onYes)
 	}
+	if m.OnNo != nil {
+		return tea.Sequence(overlay.Close, m.OnNo)
+	}
 	return overlay.Close
 }
+
+// Focus selects the yes button, or the no button, to start with.
+func (m *Model) Focus(yes bool) { m.yes = yes }
 
 func (m *Model) Scope() commands.Scope {
 	return commands.Scope{Name: "Question", Commands: []commands.Command{

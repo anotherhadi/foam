@@ -44,3 +44,23 @@ func TestView(t *testing.T) {
 		t.Errorf("view:\n%s", v)
 	}
 }
+
+type noMsg struct{}
+
+func TestOnNoAndFocus(t *testing.T) {
+	m := New("Keep", "Keep it?", nil)
+	m.OnNo = func() tea.Msg { return noMsg{} }
+	if !foamtest.Has[noMsg](foamtest.Run(t, m.Scope(), "confirm.no")) {
+		t.Error("no did not run OnNo")
+	}
+	if !foamtest.Has[noMsg](foamtest.Run(t, m.Scope(), "confirm.select")) {
+		t.Error("select starts on No: it should run OnNo")
+	}
+	m.Focus(true)
+	if foamtest.Has[noMsg](foamtest.Run(t, m.Scope(), "confirm.select")) {
+		t.Error("after Focus(true), select is a yes")
+	}
+	if foamtest.Has[noMsg](foamtest.Run(t, New("x", "y", nil).Scope(), "confirm.no")) {
+		t.Error("OnNo ran without being set")
+	}
+}

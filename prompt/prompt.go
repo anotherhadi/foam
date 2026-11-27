@@ -19,6 +19,8 @@ type Model struct {
 	Hint  string // under the field
 	// Validate, when set, is checked as the text changes and before submitting.
 	Validate func(string) error
+	// Secret hides the text typed.
+	Secret bool
 
 	input    input.Model
 	onSubmit func(string) tea.Cmd
@@ -66,6 +68,10 @@ func (m *Model) Update(msg tea.Msg) tea.Cmd {
 func (m *Model) View(maxW, maxH int) string {
 	w := min(64, maxW)
 	inner := max(w-2, 0)
+	m.input.Mask = 0
+	if m.Secret {
+		m.input.Mask = '•'
+	}
 	lines := []string{m.input.View(inner, true)}
 	switch {
 	case m.err != nil:

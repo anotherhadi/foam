@@ -16,6 +16,8 @@ import (
 type Model struct {
 	Prompt      string
 	Placeholder string
+	// Mask, when set, is drawn in place of every character: for secrets.
+	Mask rune
 
 	value  []rune
 	cursor int
@@ -118,35 +120,47 @@ func (m *Model) wordEnd() int {
 	return i
 }
 
+func (m *Model) shown() []rune {
+	if m.Mask == 0 {
+		return m.value
+	}
+	out := make([]rune, len(m.value))
+	for i := range out {
+		out[i] = m.Mask
+	}
+	return out
+}
+
 func (m *Model) View(w int, focused bool) string {
+	value := m.shown()
 	prompt := theme.Primary().Render(m.Prompt)
 	w -= ansi.StringWidth(m.Prompt)
 	if w <= 1 {
 		return prompt
 	}
-	if len(m.value) == 0 && !focused {
+	if len(value) == 0 && !focused {
 		return prompt + theme.Muted().Render(ansi.Truncate(m.Placeholder, w, "…"))
 	}
 	// Keep the cursor in view, one cell left free for it at the end.
 	if m.cursor < m.off {
 		m.off = m.cursor
 	}
-	for ansi.StringWidth(string(m.value[m.off:m.cursor])) > w-1 {
+	for ansi.StringWidth(string(value[m.off:m.cursor])) > w-1 {
 		m.off++
 	}
-	before := string(m.value[m.off:m.cursor])
+	before := string(value[m.off:m.cursor])
 	var b strings.Builder
 	b.WriteString(prompt + theme.Fg().Render(before))
 	if !focused {
-		b.WriteString(theme.Fg().Render(ansi.Truncate(string(m.value[m.cursor:]), w-ansi.StringWidth(before), "")))
+		b.WriteString(theme.Fg().Render(ansi.Truncate(string(value[m.cursor:]), w-ansi.StringWidth(before), "")))
 		return b.String()
 	}
 	at, after := " ", ""
-	if m.cursor < len(m.value) {
-		at, after = string(m.value[m.cursor]), string(m.value[m.cursor+1:])
+	if m.cursor < len(value) {
+		at, after = string(value[m.cursor]), string(value[m.cursor+1:])
 	}
 	b.WriteString(lipgloss.NewStyle().Reverse(true).Render(at))
-	if len(m.value) == 0 && m.Placeholder != "" {
+	if len(value) == 0 && m.Placeholder != "" {
 		after = theme.Muted().Render(m.Placeholder)
 	} else {
 		after = theme.Fg().Render(after)

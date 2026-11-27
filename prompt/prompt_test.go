@@ -59,3 +59,12 @@ func TestView(t *testing.T) {
 		t.Error("a prompt captures printable keys")
 	}
 }
+
+func TestSecret(t *testing.T) {
+	m := New("Password", "", func(s string) tea.Cmd { return nil })
+	m.Secret = true
+	foamtest.Type(m.Update, "hunter2")
+	if v := ansi.Strip(m.View(40, 10)); strings.Contains(v, "hunter2") || !strings.Contains(v, "•••••••") {
+		t.Fatalf("view = %q", v)
+	}
+}

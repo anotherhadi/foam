@@ -79,3 +79,22 @@ func TestClean(t *testing.T) {
 		t.Fatal("clean text changed")
 	}
 }
+
+func TestSelectedKeepsColors(t *testing.T) {
+	row := " " + theme.Danger().Render("red") + " plain " + theme.Success().Render("green")
+	got := Selected(row, 30, true)
+	if ansi.StringWidth(got) != 30 {
+		t.Fatalf("width = %d", ansi.StringWidth(got))
+	}
+	if !strings.Contains(got, theme.Danger().Render("red")) || !strings.Contains(got, theme.Success().Render("green")) {
+		t.Fatalf("colors lost: %q", got)
+	}
+	if ansi.Strip(got) != ansi.Strip(Pad(row, 30)) {
+		t.Fatalf("text changed: %q", ansi.Strip(got))
+	}
+	bg := lipgloss.NewStyle().Background(theme.Selection().Value()).Foreground(theme.Fg().Value()).Render("x")
+	bg, _, _ = strings.Cut(bg, "x")
+	if strings.Count(got, bg) < 3 {
+		t.Fatalf("background not kept after the colored parts: %q", got)
+	}
+}
